@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OPM Discovery</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div id="modal">
+        <div class="modal-box">
+            <h3 id="mt" style="color:#ff74a4;">Manage User</h3>
+            <form action="/save_user" method="POST">
+                <input type="hidden" name="user_id" id="fid">
+                <div class="form-group">
+                    <label>NAME</label>
+                    <input type="text" name="username" id="fn" required>
+                </div>
+                <div class="form-group">
+                    <label>GENRES (MAX 2)</label>
+                    <select name="fav_genres" id="fg" multiple>
+                        {% for g in genres %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+                    </select>
+                </div>
+                <button type="submit">Save Profile</button>
+                <button type="button" class="btn-cancel" onclick="tM(0)">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container" id="mc">
+        <div class="user-section">
+            {% for u in users %}
+            <div class="user-badge {% if current_user == u.name %}active{% endif %}">
+                <span onclick="location.href='/switch_user/{{u.id}}'" style="cursor:pointer;"><b>{{ u.name }}</b></span>
+                <span class="edit-icon" onclick="oE(this,'{{u.id}}','{{u.name}}')" data-g='{{u.fav_genres|tojson}}'>✎</span>
+                <a href="/delete_user/{{u.id}}" class="del-icon" onclick="return confirm('Delete user?')">×</a>
+            </div>
+            {% endfor %}
+            <button style="width:auto; padding:5px 15px;" onclick="tM(1)">+ Add User</button>
+        </div>
+
+        <h1 style="color:#ff74a4;">🌸 OPM Discovery</h1>
+        
+        <form action="/predict" method="post">
+            <div class="form-group"><label>ARTIST</label>
+                <select name="artist">
+                    <option value="Any">-- Any --</option>
+                    {% for a in artists %}<option value="{{ a }}">{{ a }}</option>{% endfor %}
+                </select></div>
+            <div class="form-group"><label>GENRE</label>
+                <select name="genre">
+                    <option value="Any">-- Any --</option>
+                    {% for g in genres %}<option value="{{ g }}">{{ g }}</option>{% endfor %}
+                </select></div>
+            <div class="form-group"><label>YEAR</label>
+                <select name="year">
+                    <option value="Any">-- Any --</option>
+                    {% for y in years %}<option value="{{ y }}">{{ y }}</option>{% endfor %}
+                </select></div>
+            <button type="submit">Get Recommendations</button>
+        </form>
+
+        <!-- The "5 music" logic message shows here -->
+        {% if results_message %}
+        <div class="message-banner"><i>{{ results_message }}</i></div>
+        {% endif %}
+
+        {% if recommendations %}
+        <div class="result-container">
+            {% for s in recommendations %}
+            <div class="song-card">
+                <b style="color:#ff4d8d; font-size:18px;">{{ s.Song }}</b>
+                <div style="font-size:14px; color:#888;">by {{ s.Artist }}</div>
+                <div class="details-grid">
+                    <div class="item"><b>Album</b> {{ s.Album }}</div>
+                    <div class="item"><b>Genre</b> {{ s.Genre }}</div>
+                    <div class="item"><b>Year</b> {{ s['Release Year'] }}</div>
+                    <div class="item"><b>Duration</b> {{ s.Duration }}</div>
+                    <div class="item"><b>Writer</b> {{ s.Writer }}</div>
+                    <div class="item"><b>Composer</b> {{ s.Composer }}</div>
+                    <div class="item"><b>Producer</b> {{ s.Producer }}</div>
+                    <div class="item"><b>Award</b> {{ s.Award }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const m=document.getElementById('modal'), c=document.getElementById('mc'), gs=document.getElementById('fg');
+        function tM(s){m.style.display=s?'flex':'none';c.classList.toggle('blur',s);}
+        function oE(b,i,n){
+            document.getElementById('mt').innerText="Edit User";
+            document.getElementById('fid').value=i;
+            document.getElementById('fn').value=n;
+            const favs = JSON.parse(b.dataset.g);
+            Array.from(gs.options).forEach(opt => opt.selected = favs.includes(opt.value));
+            tM(1);
+        }
+        gs.onmousedown = function(e) {
+            e.preventDefault();
+            const opt = e.target;
+            if (opt.tagName === 'OPTION') {
+                const count = Array.from(this.options).filter(x => x.selected).length;
+                if (opt.selected) { opt.selected = false; } 
+                else {
+                    if (count >= 2) return alert("Select up to 2 only");
+                    opt.selected = true;
+                }
+                this.focus();
+            }
+        };
+    </script>
+</body>
+</html>
